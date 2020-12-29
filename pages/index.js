@@ -1,203 +1,160 @@
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head'
+import Link from 'next/link'
+import { withRouter } from 'next/router'
+import Pelicula from '../components/pelicula';
+import Base from '../components/base';
+import ActiveLink from './activeLink'
+import axios from 'axios';
 
-const Home = () => (
-  <div className="container">
-    <Head>
-      <title>Create Next App</title>
-      <link rel="icon" href="/favicon.ico" />
-    </Head>
 
-    <main>
-      <h1 className="title">
-        Welcome to <a href="https://nextjs.org">Next.js!</a>
-      </h1>
+/**
+ Usar getStaticProps cuando.
+Los datos necesarios para representar la página están disponibles
+en el momento de la compilación antes de la solicitud del usuario.
+Los datos provienen de CMS sin cabeza.
+Los datos pueden almacenarse en caché públicamente (no son específicos del usuario).
+La página debe ser renderizada previamente (para SEO) y ser muy rápida: 
+getStaticProps genera archivos HTML y JSON,
+los cuales pueden ser almacenados en caché por un CDN para el rendimiento.
+ */
+export async function getStaticProps(query) {
 
-      <p className="description">
-        Get started by editing <code>pages/index.js</code>
-      </p>
+  const pagina = query.pagina ? Number(query.pagina) : 1;
+  const respuesta = await axios.get(`http://www.omdbapi.com/?apikey=2da6ba8a&s=batman&page=$1`)
+  const peliculas = respuesta.data.Search;
+  return {
+    props: {
+      peliculas,
+      pagina
+    }
+  }
 
-      <div className="grid">
-        <a href="https://nextjs.org/docs" className="card">
-          <h3>Documentation &rarr;</h3>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+}
 
-        <a href="https://nextjs.org/learn" className="card">
-          <h3>Learn &rarr;</h3>
-          <p>Learn about Next.js in an interactive course with quizzes!</p>
-        </a>
 
-        <a
-          href="https://github.com/zeit/next.js/tree/master/examples"
-          className="card"
-        >
-          <h3>Examples &rarr;</h3>
-          <p>Discover and deploy boilerplate example Next.js projects.</p>
-        </a>
 
-        <a
-          href="https://zeit.co/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          className="card"
-        >
-          <h3>Deploy &rarr;</h3>
-          <p>
-            Instantly deploy your Next.js site to a public URL with ZEIT Now.
-          </p>
-        </a>
-      </div>
-    </main>
+const App = ({ props, router }) => {
+  console.log("estos son los props que llegan", props);
+  console.log("Router", router);
+  const [pagina, guardarPagina] = useState(1);
+  const [peliculas, guardarPeliculas] = useState(null);
 
-    <footer>
-      <a
-        href="https://zeit.co?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Powered by <img src="/zeit.svg" alt="ZEIT Logo" />
-      </a>
-    </footer>
+  const anterior = () => {
+    const an = pagina - 1;
+    guardarPagina(an)
+  }
+  const siguiente = () => {
+    const si = pagina + 1;
+    guardarPagina(si)
+  }
 
-    <style jsx>{`
-      .container {
-        min-height: 100vh;
-        padding: 0 0.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
 
-      main {
-        padding: 5rem 0;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
+  useEffect(() => {
+    const consultarAPI = async () => {
+      const respuesta = await axios.get(`http://www.omdbapi.com/?apikey=2da6ba8a&s=batman&page=${pagina}`)
+      const peliculas = respuesta.data.Search
+      guardarPeliculas(peliculas);
+    }
+    consultarAPI()
+  }, [pagina])
 
-      footer {
-        width: 100%;
-        height: 100px;
-        border-top: 1px solid #eaeaea;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
+  const renderPaginacion = () => {
+    const Anterior = pagina > 1 ?
+      <button onClick={() => anterior()}><span>ANTERIOR</span></button> :
+      null;
 
-      footer img {
-        margin-left: 0.5rem;
-      }
+    return (
+      <div className="control">
+        {Anterior}
+        <button onClick={() => siguiente()}><span>SIGUIENTE</span></button>
 
-      footer a {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .title a {
-        color: #0070f3;
-        text-decoration: none;
-      }
-
-      .title a:hover,
-      .title a:focus,
-      .title a:active {
-        text-decoration: underline;
-      }
-
-      .title {
-        margin: 0;
-        line-height: 1.15;
-        font-size: 4rem;
-      }
-
-      .title,
-      .description {
-        text-align: center;
-      }
-
-      .description {
-        line-height: 1.5;
-        font-size: 1.5rem;
-      }
-
-      code {
-        background: #fafafa;
-        border-radius: 5px;
-        padding: 0.75rem;
-        font-size: 1.1rem;
-        font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-          DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-      }
-
-      .grid {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-
-        max-width: 800px;
-        margin-top: 3rem;
-      }
-
-      .card {
-        margin: 1rem;
-        flex-basis: 45%;
-        padding: 1.5rem;
-        text-align: left;
-        color: inherit;
-        text-decoration: none;
-        border: 1px solid #eaeaea;
-        border-radius: 10px;
-        transition: color 0.15s ease, border-color 0.15s ease;
-      }
-
-      .card:hover,
-      .card:focus,
-      .card:active {
-        color: #0070f3;
-        border-color: #0070f3;
-      }
-
-      .card h3 {
-        margin: 0 0 1rem 0;
-        font-size: 1.5rem;
-      }
-
-      .card p {
-        margin: 0;
-        font-size: 1.25rem;
-        line-height: 1.5;
-      }
-
-      @media (max-width: 600px) {
-        .grid {
-          width: 100%;
-          flex-direction: column;
+        <style jsx global>{`
+        .control {
+          text-align: center; 
         }
+      .control button {
+        margin-left: 1rem;
+        background-color: #347cfa;
+        color: white;
+        border-radius: 10px;
+        font-size: 20px;
+        border: 1px solid black;
       }
     `}</style>
+      </div>
+    )
+  }
+  if (!peliculas) return null;
+  return (
+    <Base>
+      <Head>
+        <title>APPMOVIES!!</title>
+      </Head>
+      <div className="containerNav">
+        <nav>
+          <ul className="items">
+            <li><Link href="/"><a>Inicio</a></Link></li>
+            <li><Link href="/inicio"><a>Series</a></Link></li>
+            <li><Link href="/documentales"><a>Documentales</a></Link></li>
+          </ul>
+        </nav>
+        <style jsx>
+          {
+            `
+            text-align: center;
+            .items {
+              inherit: none;
+              display: flex;
+              flex-direction: rows;
+              justify-content: right;
+          }
+          .items li {
+              inherit: none;
+              margin: 10px;
+              padding: 5px;
+              list-style: none;
+              background: black;
+              border: solid 1px black;
+              border-radius: 10px;
+          }
+          .items a {
+            text-decoration: none;
+            color: white;
+          }
+          `
 
-    <style jsx global>{`
-      html,
-      body {
-        padding: 0;
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-          Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-      }
+          
+          }
+        </style>
+      </div>
+      <ActiveLink href="/inicio">
+        colombia
+      </ActiveLink>
+      <div>
+        {!peliculas ? null : (
 
-      * {
-        box-sizing: border-box;
-      }
-    `}</style>
-  </div>
-)
+          <div className="peliculas">
+            {Array.isArray(peliculas) && peliculas.map((p) => <Pelicula {...p} />)}
+            <style jsx>{`
+            .peliculas {
+              display: flex;
+              flex-wrap: wrap;
+              justify-content:center;
+              padding-bottom: 2rem;
+              padding-top: 2rem;
+            }
+           `}
 
-export default Home
+            </style>
+          </div>
+        )}
+
+        {renderPaginacion()}
+      </div>
+    </Base>
+  )
+
+
+}
+export default withRouter(App);

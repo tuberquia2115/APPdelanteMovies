@@ -1,0 +1,8 @@
+.nav .nav-list{
+    display: flex;
+    flex-direction: row;
+
+}
+.nav .nav-list .nav__list__item{
+   list-style: none;
+}
